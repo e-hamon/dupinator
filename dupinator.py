@@ -1,20 +1,11 @@
 #!/usr/bin/python
 
-# Dupinator
-# Original script by Bill Bumgarner: see
-# http://www.pycs.net/bbum/2004/12/29/
-#
-# Updated by Andrew Shearer on 2004-12-31: see
-# http://www.shearersoftware.com/personal/weblog/2005/01/14/dupinator-ii
-
 import os
 import sys
 import stat
 import md5
-import pipes
 
 filesBySize = {}
-requireEqualNames = False
 
 def walker(arg, dirname, fnames):
     d = os.getcwd()
@@ -22,9 +13,9 @@ def walker(arg, dirname, fnames):
     try:
         fnames.remove('Thumbs')
     except ValueError:
-        pass        
+        pass
     for f in fnames:
-        if not os.path.isfile(f) or os.path.islink(f) or f == '.DS_Store':
+        if not os.path.isfile(f):
             continue
         size = os.stat(f)[stat.ST_SIZE]
         if size < 100:
@@ -37,64 +28,51 @@ def walker(arg, dirname, fnames):
         a.append(os.path.join(dirname, f))
     os.chdir(d)
 
-def fmt3(num):
-    for x in ['','Kb','Mb','Gb','Tb']:
-        if num<1024:
-            return "%3.1f%s" % (num, x)
-        num /=1024
-
 for x in sys.argv[1:]:
-    sys.stderr.write('Scanning directory "%s"....' % x + "\n")
+    print 'Scanning directory "%s"....' % x
     os.path.walk(x, walker, filesBySize)    
 
-FIRST_SCAN_BYTES = 1024
-sys.stderr.write( 'Finding potential dupes...' + "\n")
-dupes = [] # ashearer
+print 'Finding potential dupes...'
 potentialDupes = []
 potentialCount = 0
+trueType = type(True)
 sizes = filesBySize.keys()
 sizes.sort()
 for k in sizes:
     inFiles = filesBySize[k]
+    outFiles = []
     hashes = {}
     if len(inFiles) is 1: continue
-    sys.stderr.write( 'Testing %d files of size %d...' % (len(inFiles), k) + "\n")
-    if requireEqualNames:
-        for fileName in inFiles:
-            hashes.setdefault(os.path.basename(fileName), []).append(fileName)
-        inFiles = []
-        for nameGroup in hashes.values():
-            if len(nameGroup) > 1:
-                inFiles.extend(nameGroup)
-        hashes = {}
+    print 'Testing %d files of size %d...' % (len(inFiles), k)
     for fileName in inFiles:
-        #if not os.path.isfile(fileName):
-        #    continue
+        if not os.path.isfile(fileName):
+            continue
         aFile = file(fileName, 'r')
-        hasher = md5.new(aFile.read(FIRST_SCAN_BYTES))
+        hasher = md5.new(aFile.read(1024))
         hashValue = hasher.digest()
         if hashes.has_key(hashValue):
-            hashes[hashValue].append(fileName)
+            x = hashes[hashValue]
+            if type(x) is not trueType:
+                outFiles.append(hashes[hashValue])
+                hashes[hashValue] = True
+            outFiles.append(fileName)
         else:
-            hashes[hashValue] = [fileName]
+            hashes[hashValue] = fileName
         aFile.close()
-    outFileGroups = [fileGroup for fileGroup in hashes.values() if len(fileGroup) > 1] # ashearer
-    if k <= FIRST_SCAN_BYTES:   # we already scanned to whole file; put into definite dups list (ashearer)
-        dupes.extend(outFileGroups)
-    else:
-        potentialDupes.extend(outFileGroups)
-    potentialCount = potentialCount + len(outFileGroups)
+    if len(outFiles):
+        potentialDupes.append(outFiles)
+        potentialCount = potentialCount + len(outFiles)
 del filesBySize
 
-sys.stderr.write( 'Found %d sets of potential dupes...' % potentialCount  + "\n")
-sys.stderr.write( 'Scanning for real dupes...'  + "\n")
+print 'Found %d sets of potential dupes...' % potentialCount
+print 'Scanning for real dupes...'
 
-#dupes = [] ashearer
+dupes = []
 for aSet in potentialDupes:
-    #outFiles = []
+    outFiles = []
     hashes = {}
     for fileName in aSet:
-        sys.stderr.write( 'Scanning file "%s"...' % fileName   + "\n")
+        print 'Scanning file "%s"...' % fileName
         aFile = file(fileName, 'r')
         hasher = md5.new()
         while True:
@@ -105,25 +83,22 @@ for aSet in potentialDupes:
         aFile.close()
         hashValue = hasher.digest()
         if hashes.has_key(hashValue):
-            hashes[hashValue].append(fileName)  # ashearer
+            if not len(outFiles):
+                outFiles.append(hashes[hashValue])
+            outFiles.append(fileName)
         else:
-            hashes[hashValue] = [fileName] #ashearer
-    outFileGroups = [fileGroup for fileGroup in hashes.values() if len(fileGroup) > 1] # ashearer
-    dupes.extend(outFileGroups)
+            hashes[hashValue] = fileName
+    if len(outFiles):
+        dupes.append(outFiles)
 
 i = 0
-counter = 0
-bytesSaved = 0
 for d in dupes:
-    counter = counter + 1
-    # Sort on length, as usually less interesting duplicates have longer names
-    d.sort( lambda x,y: cmp(len(x), len(y)) )
-    print 'Original is %s %s (#%d)' % (d[0], fmt3(os.path.getsize(d[0])), counter)
+    print 'Original is %s' % d[0]
     for f in d[1:]:
         i = i + 1
-        print 'rm %s' % pipes.quote(f)
-        bytesSaved += os.path.getsize(f)
-        #os.remove(f)
+        print 'Deleting %s' % f
+        os.remove(f)
     print
+        
 
-print "Would have saved %s; %d file(s) duplicated." % (fmt3(bytesSaved),len(dupes))
+        
