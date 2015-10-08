@@ -1,11 +1,27 @@
 dupinator
 =========
 
-The original dupinator.py script was created by Bill Bumgarner, and later improved by Andrew Shearer.
+The original dupinator.py script was created by Bill Bumgarner.
 
-The "best" version will be simple called dupinator.py, the others are there for historical reference.
+This version was created by Erwan Hamon and produces a bash script that can be reviewed and edited.
 
-The script is used to find duplicate files, taking care to use as little CPU as possible, thus only comparing files of the same size, then checking the first kb for differences, and after that creating a checksum of the whole file.
+The script is used to find duplicate files, taking care to use as little CPU as possible, thus only comparing files of the same size, then checking the first kb for differences, and after that using filecmp.
 
-TODO :
-Create better rules to find "original", as shortest isn't always the best guess.
+Usage: dupinator.py [options] [dir]...
+
+Options:
+  -h, --help       show this help message and exit
+  -1, --keep1      Keep files in first target directory
+  -m, --move       Move duplicate files to ~/zzz instead of deleting them
+  -k, --kmail      In kmail maildirs, delete unread mails first
+  -R, --recursive  Visit subdirectories recursively.
+  -d, --debug      Verbose output for debugging
+  -v, --verbose    Verbose output but less than debug
+
+Example:
+
+- $ dupinator.py -1Rv ~/mainfolder ~/oldbackup > supdup.sh
+- $ bash supdup.sh
+
+- $ dupinator.py -Rv dir/to/clean/feeling/lucky | bash
+
