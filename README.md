@@ -7,6 +7,7 @@ This version was created by Erwan Hamon and produces a bash script that can be r
 
 The script is used to find duplicate files, taking care to use as little CPU as possible, thus only comparing files of the same size, then checking the first kb for differences, and after that using filecmp.
 
+```
 Usage: dupinator.py [options] [dir]...
 
 Options:
@@ -17,11 +18,13 @@ Options:
   -R, --recursive  Visit subdirectories recursively.
   -d, --debug      Verbose output for debugging
   -v, --verbose    Verbose output but less than debug
+```
 
-Example:
+Examples:
 
-- $ dupinator.py -1Rv ~/mainfolder ~/oldbackup > supdup.sh
-- $ bash supdup.sh
-
-- $ dupinator.py -Rv dir/to/clean/feeling/lucky | bash
+1 Keep anything in ~/mainfolder
+  - `$ dupinator.py -1Rv ~/mainfolder ~/oldbackup > supdup.sh`
+  - `$ bash supdup.sh`
+2 I'm feeling lucky
+  - `$ dupinator.py -Rv dir/to/clean | bash`
 
