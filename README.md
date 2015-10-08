@@ -1,11 +1,12 @@
 dupinator
 =========
 
-The original dupinator.py script was created by Bill Bumgarner, and later improved by Andrew Shearer.
+The original dupinator.py script was created by Bill Bumgarner.
 
-The "best" version will be simple called dupinator.py, the others are there for historical reference.
+This is the improved version created by Andrew Shearer.
+
+It can also be found here:
+- http://ashearer.com/personal/weblog/2005/01/14/dupinator-ii/
 
 The script is used to find duplicate files, taking care to use as little CPU as possible, thus only comparing files of the same size, then checking the first kb for differences, and after that creating a checksum of the whole file.
 
-TODO :
-Create better rules to find "original", as shortest isn't always the best guess.
