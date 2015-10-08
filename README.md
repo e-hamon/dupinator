@@ -22,9 +22,9 @@ Options:
 
 Examples:
 
-1 Keep anything in ~/mainfolder
+1. Keep anything in ~/mainfolder
   - `$ dupinator.py -1Rv ~/mainfolder ~/oldbackup > supdup.sh`
   - `$ bash supdup.sh`
-2 I'm feeling lucky
+2. I'm feeling lucky
   - `$ dupinator.py -Rv dir/to/clean | bash`
 
