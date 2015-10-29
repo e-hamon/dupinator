@@ -12,6 +12,7 @@ import hashlib
 import filecmp
 from optparse import OptionParser
 import sys
+import logging
 
 options = {}
 dirMove = "~/zzz"
@@ -30,11 +31,11 @@ def scanDir(listDirs):
             f = os.path.join(dirname, fname)
             
             if not os.path.isfile(f):
-                if options.debug: print "# " + f + " is not a file"
+                logging.debug("%s is not a file", f)
                 continue
             
             if os.path.islink(f):
-                if options.debug: print "# " + f + " is a symlink"
+                logging.debug("%s is a symlink", f)
                 continue
             
             size = os.stat(f)[stat.ST_SIZE]
@@ -68,11 +69,11 @@ def scanDirs(listDirs):
                 f = os.path.join(dirname, fname)
                 
                 if not os.path.isfile(f):
-                    if options.debug: print "# " + f + " is not a file"
+                    logging.debug("%s is not a file", f)
                     continue
                 
                 if os.path.islink(f):
-                    if options.debug: print "# " + f + " is a symlink"
+                    logging.debug("%s is a symlink", f)
                     continue
                 
                 size = os.stat(f)[stat.ST_SIZE]
@@ -101,18 +102,14 @@ def findDuplicates(filesBySize):
         if len(inFiles) is 1: continue
         inFiles.sort()
         prevFile = ""
-        if options.debug:
-            print '# %d / %d Testing %d files of size %d.' % (len(filesBySize), total, len(inFiles), k)
-        elif options.verbose:
-            sys.stderr.write('# %d / %d Testing %d files of size %d.\n' % (len(filesBySize), total, len(inFiles), k))
-            
+        logging.info('%d / %d Testing %d files of size %d.', len(filesBySize), total, len(inFiles), k)
+        
         for fileName in inFiles:
             if not os.path.isfile(fileName):
                 continue
             if (fileName == prevFile):
                 """ We do not want to delete a file because it is a duplicate of itself """
-                if options.debug:
-                    print "# File already processed : " + fileName
+                logging.debug("File already processed : %s", fileName)
                 continue
             prevFile = fileName
             try:
@@ -125,28 +122,25 @@ def findDuplicates(filesBySize):
             hashValue = hashlib.md5(aFile.read(1024)).digest() # 4096 ?
             aFile.close()
             if hashes.has_key(hashValue):
-                if options.debug:
-                    print "  # hash found"
+                logging.debug("    hash found")
                 listOfLists = hashes[hashValue]
                 isDup = False
                 for listOfDupes in listOfLists:
-                    if options.debug:
-                        print "    # filecmp"
+                    logging.debug("      filecmp")
                     if filecmp.cmp(fileName, listOfDupes[0], False):
                         listOfDupes.append(fileName)
                         isDup = True
-                        if options.debug:
-                            print "      # dupes %s\n              %s" % (listOfDupes[0], fileName)
+                        logging.debug("        dupes %s", listOfDupes[0])
+                        logging.debug("              %s", fileName)
                         break
                     else:
-                        if options.debug:
-                            print "      # difs %s\n             %s" % (listOfDupes[0], fileName)
+                        logging.debug("        difs  %s", listOfDupes[0])
+                        logging.debug("              %s", fileName)
                        
                 if not isDup:
                     listOfLists.append([fileName])    # Add a new list of files to the list of lists
             else:
-                if options.debug:
-                    print "  # new hash"
+                logging.debug("    new hash");
                 hashes[hashValue] = [[fileName]]    # New list of list of files
         
         while len(hashes):
@@ -163,7 +157,6 @@ def outputScript(dupes, listDirs):
     dupes.sort()
     dupes.reverse()
     
-    #for d in dupes:
     while dupes:
         d = dupes.pop() # Unstack dupes until it's empty
         found = False
@@ -233,6 +226,14 @@ def main():
                     help="Verbose output but less than debug")
                     
     (options, listDirs) = parser.parse_args()
+    
+    logFormat = '# %(levelname)s: %(message)s'
+    if options.debug:
+        logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format=logFormat)
+    elif options.verbose:
+        logging.basicConfig(stream=sys.stderr, level=logging.INFO, format=logFormat)
+    else:
+        logging.basicConfig(format=logFormat)
     
     if not len(listDirs):
         listDirs.append(".")    # Default to current directory.
