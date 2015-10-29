@@ -53,17 +53,17 @@ def scanDir(listDirs):
 def scanDirs(listDirs):
     """
     Recursively scan all files in each directory from listDirs.
-    Used by the -R / --recursive parser option
+    Called when using parser option : "-R / --recursive"
     """
     filesBySize = {}
     
 #    if options.modeKeep1:
 #        print "# Keep files in %s." % listDirs[0]
     
-    for x in listDirs:
-        print '# Scanning directory "%s"....' % x
+    for sDir in listDirs:
+        print '# Scanning directory "%s"....' % sDir
         
-        for dirname, dummyDirs, fnames in os.walk(x):
+        for dirname, dummyDirs, fnames in os.walk(sDir):
             for fname in fnames:
                 f = os.path.join(dirname, fname)
                 
@@ -110,8 +110,9 @@ def findDuplicates(filesBySize):
             if not os.path.isfile(fileName):
                 continue
             if (fileName == prevFile):
+                """ We do not want to delete a file because it is a duplicate of itself """
                 if options.debug:
-                    print "Duplicate " + fileName
+                    print "# File already processed : " + fileName
                 continue
             prevFile = fileName
             try:
@@ -126,27 +127,27 @@ def findDuplicates(filesBySize):
             if hashes.has_key(hashValue):
                 if options.debug:
                     print "  # hash found"
-                x = hashes[hashValue]
+                listOfLists = hashes[hashValue]
                 isDup = False
-                for dbl in x:
+                for listOfDupes in listOfLists:
                     if options.debug:
                         print "    # filecmp"
-                    if filecmp.cmp(fileName, dbl[0], False):
-                        dbl.append(fileName)
+                    if filecmp.cmp(fileName, listOfDupes[0], False):
+                        listOfDupes.append(fileName)
                         isDup = True
                         if options.debug:
-                            print "      # dupes %s\n              %s" % (dbl[0], fileName)
+                            print "      # dupes %s\n              %s" % (listOfDupes[0], fileName)
                         break
                     else:
                         if options.debug:
-                            print "      # difs %s\n             %s" % (dbl[0], fileName)
+                            print "      # difs %s\n             %s" % (listOfDupes[0], fileName)
                        
                 if not isDup:
-                    x.append([fileName])
+                    listOfLists.append([fileName])    # Add a new list of files to the list of lists
             else:
                 if options.debug:
                     print "  # new hash"
-                hashes[hashValue] = [[fileName]]
+                hashes[hashValue] = [[fileName]]    # New list of list of files
         
         while len(hashes):
             (dummy, listF) = hashes.popitem()
